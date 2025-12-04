@@ -20,7 +20,7 @@
 
 ### 方式一：下载安装包（推荐）
 
-1. 前往 [Releases](https://github.com/Sunny-117/quick-note/releases) 页面
+1. 前往 [Releases](https://github.com/Sunny-117/QuickNote/releases) 页面
 2. 下载最新版本的 `.dmg` 文件
 3. 打开 `.dmg` 文件，将 QuickNote 拖入应用程序文件夹
 4. 启动应用，菜单栏会出现图标
@@ -35,8 +35,8 @@
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/Sunny-117/quick-note.git
-cd quick-note
+git clone https://github.com/Sunny-117/QuickNote.git
+cd QuickNote
 
 # 2. 构建应用
 cargo tauri build
@@ -85,7 +85,7 @@ git tag v1.0.0
 git push origin v1.0.0
 
 # 2. GitHub Actions 会自动构建并创建 Release
-# 访问 https://github.com/Sunny-117/quick-note/actions 查看进度
+# 访问 https://github.com/Sunny-117/QuickNote/actions 查看进度
 ```
 
 ### 方式二：使用发布脚本
