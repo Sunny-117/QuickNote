@@ -5,6 +5,8 @@
 ![macOS](https://img.shields.io/badge/macOS-10.13+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
+<img src="./assets/App.png" alt="QuickNote" width="400" />
+
 ## ✨ 功能特性
 
 - 🎯 **菜单栏常驻**：图标显示在 macOS 顶部菜单栏，随时可用
@@ -73,15 +75,42 @@ cargo tauri build
 
 ## 📝 发布 Release
 
-```bash
-# 1. 更新版本号（在 src-tauri/Cargo.toml 和 src-tauri/tauri.conf.json）
-# 2. 构建应用
-cargo tauri build
+### 方式一：自动发布（推荐）
 
-# 3. 创建 Release
-# - 前往 GitHub Releases 页面
-# - 创建新 Release，上传 src-tauri/target/release/bundle/macos/ 下的文件
-# - 推荐上传：QuickNote.app.tar.gz 或 .dmg 文件
+使用 GitHub Actions 自动构建和发布：
+
+```bash
+# 1. 创建并推送版本标签
+git tag v1.0.0
+git push origin v1.0.0
+
+# 2. GitHub Actions 会自动构建并创建 Release
+# 访问 https://github.com/Sunny-117/quick-note/actions 查看进度
+```
+
+### 方式二：使用发布脚本
+
+```bash
+# 安装 GitHub CLI（如果还没安装）
+brew install gh
+gh auth login
+
+# 运行发布脚本
+./scripts/release.sh v1.0.0
+```
+
+### 方式三：手动发布
+
+```bash
+# 1. 构建应用
+cargo tauri build --target universal-apple-darwin
+
+# 2. 创建压缩包
+cd src-tauri/target/universal-apple-darwin/release/bundle/macos
+tar -czf QuickNote.app.tar.gz QuickNote.app
+
+# 3. 使用 GitHub CLI 创建 Release
+gh release create v1.0.0 QuickNote.app.tar.gz --title "v1.0.0" --notes "Release notes"
 ```
 
 ## 📄 许可证
