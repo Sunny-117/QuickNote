@@ -31,11 +31,12 @@
             padding: 0 16px;
             color: white;
             font-weight: 600;
-            cursor: move;
         }
         
         #title {
             font-size: 14px;
+            flex: 1;
+            cursor: move;
         }
         
         #close-btn {
@@ -132,9 +133,9 @@
     </style>
 </head>
 <body>
-    <div id="drag-region" data-tauri-drag-region>
-        <span id="title">快速笔记</span>
-        <button id="close-btn">×</button>
+    <div id="drag-region">
+        <span id="title" data-tauri-drag-region>快速笔记</span>
+        <!-- <button id="close-btn">×</button> -->
     </div>
     
     <div id="content">
@@ -147,72 +148,83 @@
     </div>
     
     <script>
-        const textarea = document.getElementById('note-textarea');
-        const charCount = document.getElementById('char-count');
-        const clearBtn = document.getElementById('clear-btn');
-        const closeBtn = document.getElementById('close-btn');
-        
-        // 从 localStorage 加载内容
-        function loadNote() {
-            const savedNote = localStorage.getItem('quickNote');
-            if (savedNote) {
-                textarea.value = savedNote;
-                updateCharCount();
-            }
-        }
-        
-        // 保存到 localStorage
-        function saveNote() {
-            localStorage.setItem('quickNote', textarea.value);
-        }
-        
-        // 更新字符计数
-        function updateCharCount() {
-            const count = textarea.value.length;
-            charCount.textContent = `${count} 字符`;
-        }
-        
-        // 监听输入事件
-        textarea.addEventListener('input', () => {
-            saveNote();
-            updateCharCount();
-        });
-        
-        // 关闭按钮
-        closeBtn.addEventListener('click', async () => {
-            console.log('Close button clicked');
-            try {
-                const invoke = window.__TAURI_INTERNALS__.invoke;
-                // 调用 toggle_panel 来隐藏窗口
-                await invoke('toggle_panel');
-                console.log('Panel hidden successfully');
-            } catch (error) {
-                console.error('Failed to hide window:', error);
-            }
-        });
-        
-        // 页面加载时恢复内容
+        // 页面加载时初始化
         window.addEventListener('DOMContentLoaded', () => {
-            loadNote();
-        });
-        
-        // 当窗口显示时，自动聚焦到 textarea
-        window.addEventListener('focus', () => {
-            textarea.focus();
-        });
-        
-        // 监听窗口失去焦点事件 - 点击外部时自动关闭
-        window.addEventListener('blur', () => {
-            console.log('Window lost focus, hiding panel');
-            // 延迟一点关闭，避免与点击事件冲突
-            setTimeout(async () => {
-                try {
-                    const invoke = window.__TAURI_INTERNALS__.invoke;
-                    await invoke('toggle_panel');
-                } catch (error) {
-                    console.error('Failed to hide panel:', error);
+            const textarea = document.getElementById('note-textarea');
+            const charCount = document.getElementById('char-count');
+            const closeBtn = document.getElementById('close-btn');
+            
+            // 获取 Tauri invoke 函数
+            const invoke = window.__TAURI_INTERNALS__.invoke;
+            
+            console.log('Panel loaded, Tauri API:', !!invoke);
+            
+            // 从 localStorage 加载内容
+            function loadNote() {
+                const savedNote = localStorage.getItem('quickNote');
+                if (savedNote) {
+                    textarea.value = savedNote;
+                    updateCharCount();
                 }
-            }, 100);
+            }
+            
+            // 保存到 localStorage
+            function saveNote() {
+                localStorage.setItem('quickNote', textarea.value);
+            }
+            
+            // 更新字符计数
+            function updateCharCount() {
+                const count = textarea.value.length;
+                charCount.textContent = `${count} 字符`;
+            }
+            
+            // 监听输入事件
+            textarea.addEventListener('input', () => {
+                saveNote();
+                updateCharCount();
+            });
+            
+            // 关闭按钮 - 使用 mousedown 事件更可靠
+            closeBtn.addEventListener('mousedown', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Close button clicked (mousedown)');
+                try {
+                    await invoke('toggle_panel');
+                    console.log('Panel hidden successfully');
+                } catch (error) {
+                    console.error('Failed to hide window:', error);
+                }
+            });
+            
+            // 也监听 click 事件作为备用
+            closeBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Close button clicked (click)');
+            });
+            
+            // 当窗口显示时，自动聚焦到 textarea
+            window.addEventListener('focus', () => {
+                textarea.focus();
+            });
+            
+            // 监听窗口失去焦点事件 - 点击外部时自动关闭
+            window.addEventListener('blur', () => {
+                console.log('Window lost focus, hiding panel');
+                // 延迟一点关闭，避免与点击事件冲突
+                setTimeout(async () => {
+                    try {
+                        await invoke('toggle_panel');
+                    } catch (error) {
+                        console.error('Failed to hide panel:', error);
+                    }
+                }, 100);
+            });
+            
+            // 加载笔记内容
+            loadNote();
         });
     </script>
 </body>
