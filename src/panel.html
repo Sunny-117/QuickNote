@@ -159,18 +159,74 @@
             
             console.log('Panel loaded, Tauri API:', !!invoke);
             
-            // 从 localStorage 加载内容
-            function loadNote() {
-                const savedNote = localStorage.getItem('quickNote');
-                if (savedNote) {
-                    textarea.value = savedNote;
-                    updateCharCount();
+            // 防抖定时器
+            let saveTimer = null;
+            
+            // 从后端加载内容
+            async function loadNote() {
+                console.log('=== loadNote START ===');
+                console.log('Step 1: loadNote function called');
+                console.log('Step 2: textarea element:', textarea);
+                console.log('Step 3: Current textarea value before load:', textarea.value);
+                
+                try {
+                    console.log('Step 4: Calling invoke load_note command...');
+                    const savedNote = await invoke('load_note');
+                    console.log('Step 5: invoke returned successfully');
+                    console.log('Step 6: savedNote value:', JSON.stringify(savedNote));
+                    console.log('Step 7: savedNote type:', typeof savedNote);
+                    console.log('Step 8: savedNote length:', savedNote ? savedNote.length : 'N/A');
+                    console.log('Step 9: savedNote is truthy?', !!savedNote);
+                    
+                    if (savedNote) {
+                        console.log('Step 10: savedNote is truthy, setting textarea value...');
+                        console.log('Step 11: Before set - textarea.value:', textarea.value);
+                        textarea.value = savedNote;
+                        console.log('Step 12: After set - textarea.value:', textarea.value);
+                        console.log('Step 13: Calling updateCharCount...');
+                        updateCharCount();
+                        console.log('Step 14: Note loaded successfully, textarea value set');
+                    } else {
+                        console.log('Step 10: savedNote is empty or falsy, skipping textarea update');
+                    }
+                } catch (error) {
+                    console.error('ERROR in loadNote:', error);
+                    console.error('Error stack:', error.stack);
                 }
+                
+                console.log('=== loadNote END ===');
+                console.log('Final textarea value:', textarea.value);
             }
             
-            // 保存到 localStorage
+            // 保存到后端（带防抖）
             function saveNote() {
-                localStorage.setItem('quickNote', textarea.value);
+                // 清除之前的定时器
+                if (saveTimer) {
+                    clearTimeout(saveTimer);
+                }
+                
+                // 500ms 后保存，避免频繁写入
+                saveTimer = setTimeout(async () => {
+                    try {
+                        await invoke('save_note', { content: textarea.value });
+                        console.log('Note saved successfully');
+                    } catch (error) {
+                        console.error('Failed to save note:', error);
+                    }
+                }, 500);
+            }
+            
+            // 立即保存（不防抖）
+            async function saveNoteImmediately() {
+                if (saveTimer) {
+                    clearTimeout(saveTimer);
+                }
+                try {
+                    await invoke('save_note', { content: textarea.value });
+                    console.log('Note saved immediately');
+                } catch (error) {
+                    console.error('Failed to save note:', error);
+                }
             }
             
             // 更新字符计数
@@ -185,34 +241,41 @@
                 updateCharCount();
             });
             
-            // 关闭按钮 - 使用 mousedown 事件更可靠
-            closeBtn.addEventListener('mousedown', async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('Close button clicked (mousedown)');
-                try {
-                    await invoke('toggle_panel');
-                    console.log('Panel hidden successfully');
-                } catch (error) {
-                    console.error('Failed to hide window:', error);
-                }
-            });
+            // 关闭按钮 - 只在按钮存在时添加事件监听
+            if (closeBtn) {
+                closeBtn.addEventListener('mousedown', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Close button clicked (mousedown)');
+                    try {
+                        await saveNoteImmediately(); // 关闭前立即保存
+                        await invoke('toggle_panel');
+                        console.log('Panel hidden successfully');
+                    } catch (error) {
+                        console.error('Failed to hide window:', error);
+                    }
+                });
+                
+                // 也监听 click 事件作为备用
+                closeBtn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Close button clicked (click)');
+                });
+            }
             
-            // 也监听 click 事件作为备用
-            closeBtn.addEventListener('click', async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('Close button clicked (click)');
-            });
-            
-            // 当窗口显示时，自动聚焦到 textarea
+            // 当窗口显示时，重新加载数据并聚焦
             window.addEventListener('focus', () => {
+                console.log('>>> Window focus event triggered');
+                loadNote(); // 每次窗口获得焦点时重新加载
                 textarea.focus();
             });
             
             // 监听窗口失去焦点事件 - 点击外部时自动关闭
-            window.addEventListener('blur', () => {
+            window.addEventListener('blur', async () => {
                 console.log('Window lost focus, hiding panel');
+                // 立即保存
+                await saveNoteImmediately();
                 // 延迟一点关闭，避免与点击事件冲突
                 setTimeout(async () => {
                     try {
@@ -223,8 +286,32 @@
                 }, 100);
             });
             
-            // 加载笔记内容
-            loadNote();
+            // 页面卸载前保存
+            window.addEventListener('beforeunload', () => {
+                saveNoteImmediately();
+            });
+            
+            // 初始加载笔记内容
+            console.log('>>> DOMContentLoaded: About to call loadNote for the first time');
+            loadNote().then(() => {
+                console.log('>>> DOMContentLoaded: Initial loadNote completed');
+            });
+            
+            // 监听后端发送的面板显示事件
+            if (window.__TAURI_INTERNALS__) {
+                console.log('>>> Setting up panel-shown event listener');
+                const listen = window.__TAURI_INTERNALS__.listen;
+                
+                // 监听面板显示事件，每次显示时重新加载数据
+                listen('panel-shown', () => {
+                    console.log('>>> Panel shown event received, reloading note');
+                    loadNote();
+                }).catch(err => {
+                    console.error('Failed to setup event listener:', err);
+                });
+            } else {
+                console.error('>>> window.__TAURI_INTERNALS__ is not available!');
+            }
         });
     </script>
 </body>

@@ -1,11 +1,54 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use tauri::{Manager, LogicalPosition};
+use tauri::{Manager, LogicalPosition, Emitter};
 use tauri::tray::{TrayIconBuilder, TrayIconEvent, MouseButton};
 use tauri::menu::{Menu, MenuItem};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
+use std::fs;
+use std::path::PathBuf;
+
+// 获取数据文件路径
+fn get_data_file_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    let app_data_dir = app.path().app_data_dir()
+        .map_err(|e| format!("Failed to get app data dir: {}", e))?;
+    
+    // 确保目录存在
+    fs::create_dir_all(&app_data_dir)
+        .map_err(|e| format!("Failed to create app data dir: {}", e))?;
+    
+    Ok(app_data_dir.join("note.txt"))
+}
+
+// 保存笔记
+#[tauri::command]
+fn save_note(app: tauri::AppHandle, content: String) -> Result<(), String> {
+    let file_path = get_data_file_path(&app)?;
+    fs::write(&file_path, content)
+        .map_err(|e| format!("Failed to save note: {}", e))?;
+    println!("Note saved to: {:?}", file_path);
+    Ok(())
+}
+
+// 加载笔记
+#[tauri::command]
+fn load_note(app: tauri::AppHandle) -> Result<String, String> {
+    println!("load_note command called!");
+    let file_path = get_data_file_path(&app)?;
+    println!("Data file path: {:?}", file_path);
+    
+    if !file_path.exists() {
+        println!("Note file doesn't exist yet: {:?}", file_path);
+        return Ok(String::new());
+    }
+    
+    let content = fs::read_to_string(&file_path)
+        .map_err(|e| format!("Failed to load note: {}", e))?;
+    println!("Note loaded from: {:?}, content length: {}", file_path, content.len());
+    println!("Content: {:?}", content);
+    Ok(content)
+}
 
 #[tauri::command]
 fn toggle_panel(app: tauri::AppHandle) -> Result<(), String> {
@@ -38,6 +81,10 @@ fn toggle_panel(app: tauri::AppHandle) -> Result<(), String> {
             }
             
             panel_window.show().map_err(|e| e.to_string())?;
+            
+            // 发送窗口显示事件，触发前端重新加载数据
+            let _ = panel_window.emit("panel-shown", ());
+            
             // 不要立即设置焦点，让窗口保持打开
             // panel_window.set_focus().map_err(|e| e.to_string())?;
             println!("Panel shown");
@@ -138,7 +185,8 @@ fn main() {
             Ok(())
         })
         .plugin(tauri_plugin_shell::init())
-        .invoke_handler(tauri::generate_handler![toggle_panel])
+        .plugin(tauri_plugin_fs::init())
+        .invoke_handler(tauri::generate_handler![toggle_panel, save_note, load_note])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
