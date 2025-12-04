@@ -38,36 +38,23 @@ echo ""
 read -p "请输入选项 (1-5): " choice
 
 case $choice in
-    1)
-        echo "创建 📝 笔记本图标..."
-        convert -size 1024x1024 xc:none \
-            -gravity center \
-            -pointsize 800 \
-            -font "Apple-Color-Emoji" \
-            -annotate +0+0 "📝" \
-            "$TEMP_DIR/icon-1024.png"
-        ;;
-    2)
-        echo "创建 ✏️ 铅笔图标..."
-        convert -size 1024x1024 xc:none \
-            -gravity center \
-            -pointsize 800 \
-            -font "Apple-Color-Emoji" \
-            -annotate +0+0 "✏️" \
-            "$TEMP_DIR/icon-1024.png"
-        ;;
-    3)
-        echo "创建 📄 文档图标..."
-        convert -size 1024x1024 xc:none \
-            -gravity center \
-            -pointsize 800 \
-            -font "Apple-Color-Emoji" \
-            -annotate +0+0 "📄" \
-            "$TEMP_DIR/icon-1024.png"
+    1|2|3)
+        # Emoji 图标需要特殊处理，使用 sips 和截图
+        echo "⚠️  Emoji 图标需要手动创建"
+        echo ""
+        echo "请按照以下步骤操作："
+        echo "1. 打开预览 (Preview.app)"
+        echo "2. 文件 > 新建 > 从剪贴板"
+        echo "3. 复制这个 emoji: 📝"
+        echo "4. 调整大小到 1024x1024"
+        echo "5. 保存为 icon-1024.png"
+        echo ""
+        echo "或者选择选项 4 或 5 使用纯色图标"
+        exit 0
         ;;
     4)
-        echo "创建紫色渐变圆形图标..."
-        convert -size 1024x1024 xc:none \
+        echo "创建紫色圆形图标..."
+        magick -size 1024x1024 xc:none \
             -fill "rgb(102,126,234)" \
             -draw "circle 512,512 512,100" \
             -fill white \
@@ -78,10 +65,15 @@ case $choice in
             "$TEMP_DIR/icon-1024.png"
         ;;
     5)
-        echo "创建字母 N 图标..."
-        convert -size 1024x1024 \
-            -define gradient:angle=135 \
+        echo "创建字母 N 渐变图标..."
+        # 创建渐变背景
+        magick -size 1024x1024 \
             gradient:"rgb(102,126,234)-rgb(118,75,162)" \
+            -distort SRT 45 \
+            "$TEMP_DIR/gradient.png"
+        
+        # 添加文字
+        magick "$TEMP_DIR/gradient.png" \
             -fill white \
             -pointsize 700 \
             -font "Helvetica-Bold" \
@@ -97,7 +89,7 @@ esac
 
 # 添加圆角（macOS 风格）
 echo "✨ 添加圆角..."
-convert "$TEMP_DIR/icon-1024.png" \
+magick "$TEMP_DIR/icon-1024.png" \
     \( +clone -alpha extract \
     -draw 'fill black polygon 0,0 0,150 150,0 fill white circle 150,150 150,0' \
     \( +clone -flip \) -compose Multiply -composite \
