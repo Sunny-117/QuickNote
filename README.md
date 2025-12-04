@@ -1,6 +1,6 @@
 # QuickNote - macOS 快速笔记工具
 
-✨ 一个轻量级的 macOS 菜单栏笔记应用，随时记录你的想法。
+✨ 基于 Rust 的轻量级的 macOS 菜单栏笔记应用，随时记录你的想法。
 
 ![macOS](https://img.shields.io/badge/macOS-10.13+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
