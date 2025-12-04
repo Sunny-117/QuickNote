@@ -1,6 +1,6 @@
 [package]
 name = "quick-note"
-version = "1.0.1"
+version = "1.0.0"
 description = "A quick note taking app for macOS"
 authors = ["you"]
 license = ""
