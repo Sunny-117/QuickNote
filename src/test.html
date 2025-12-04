@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Test</title>
+    <style>
+        body {
+            padding: 20px;
+            font-family: system-ui;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tauri API 测试</h1>
+    <button id="testBtn">测试 invoke</button>
+    <div id="status">等待测试...</div>
+    
+    <script>
+        const statusDiv = document.getElementById('status');
+        
+        document.getElementById('testBtn').addEventListener('click', async () => {
+            statusDiv.textContent = '正在调用 toggle_panel...';
+            try {
+                const invoke = window.__TAURI_INTERNALS__.invoke;
+                await invoke('toggle_panel');
+                statusDiv.textContent = '✅ 成功调用 toggle_panel!';
+            } catch (error) {
+                statusDiv.textContent = '❌ 错误: ' + error;
+            }
+        });
+        
+        // 检查 Tauri API 是否可用
+        window.addEventListener('DOMContentLoaded', () => {
+            if (window.__TAURI_INTERNALS__) {
+                statusDiv.textContent = '✅ Tauri API 已加载';
+            } else {
+                statusDiv.textContent = '❌ Tauri API 未找到';
+            }
+        });
+    </script>
+</body>
+</html>

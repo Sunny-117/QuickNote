@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Icon</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            width: 48px;
+            height: 48px;
+            overflow: hidden;
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.6);
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        #icon:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        #icon:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+    <div id="icon">📝</div>
+    
+    <script>
+        console.log('Icon window loaded!');
+        
+        // 等待 Tauri API 加载
+        window.addEventListener('DOMContentLoaded', async () => {
+            // 使用 __TAURI_INTERNALS__ 来访问 invoke
+            const invoke = window.__TAURI_INTERNALS__.invoke;
+            
+            console.log('Tauri API ready');
+            
+            document.getElementById('icon').addEventListener('click', async () => {
+                console.log('Icon clicked!');
+                try {
+                    await invoke('toggle_panel');
+                    console.log('Panel toggled successfully');
+                } catch (error) {
+                    console.error('Failed to toggle panel:', error);
+                }
+            });
+            
+            // 添加视觉反馈
+            document.getElementById('icon').addEventListener('mouseenter', () => {
+                console.log('Mouse entered icon');
+            });
+        });
+    </script>
+</body>
+</html>
